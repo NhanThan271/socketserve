@@ -205,7 +205,10 @@ io.on('connection', (socket) => {
     });
     // Gửi đơn hàng này cho tất cả bếp
     kitchens.forEach((kitchenId) => {
-      io.to(kitchenId).emit("order-for-staff", enrichedOrder);
+      io.to(kitchenId).emit("new-order", {
+        ...orderData,
+        timestamp: new Date().toISOString()
+      });
     });
 
     // Cập nhật bàn cho toàn hệ thống
