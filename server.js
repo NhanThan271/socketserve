@@ -266,21 +266,6 @@ io.on('connection', (socket) => {
     io.emit("update-tables");
   });
 
-  // Update order (từ backend)
-  socket.on("order-updated", (orderData) => {
-    console.log("🔄 Order updated:", orderData);
-
-    employees.forEach((empId) => {
-      io.to(empId).emit("update-order-status", orderData);
-    });
-
-    kitchens.forEach((kitchenId) => {
-      io.to(kitchenId).emit("update-order-status", orderData);
-    });
-
-    io.emit("update-tables");
-  });
-
   // Khi bếp cập nhật trạng thái món
   socket.on("update-order-item-status", (itemData) => {
     console.log("👨‍🍳 Bếp cập nhật món:", itemData);
