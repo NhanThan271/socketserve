@@ -215,19 +215,20 @@ io.on('connection', (socket) => {
     io.emit("update-tables");
   });
 
-  // Nhận update order từ backend
-  socket.on("order-updated", (orderData) => {
-    console.log("🔄 Order updated:", orderData);
+  socket.on("new-order", (orderData) => {
+    console.log("🆕 New order received:", orderData);
 
-    // Broadcast cho tất cả nhân viên
-    employees.forEach((empId) => {
-      io.to(empId).emit("update-order-status", orderData);
+    kitchens.forEach((kitchenId) => {
+      io.to(kitchenId).emit("new-order", orderData);
     });
-    // Broadcast cho tất cả bếp
+  });
+
+  socket.on("order-updated", (orderData) => {
+    console.log("🔄 Order updated (add items):", orderData);
+
     kitchens.forEach((kitchenId) => {
       io.to(kitchenId).emit("update-order-status", orderData);
     });
-    io.emit("update-tables");
   });
 
   // Nhân viên cập nhật trạng thái đơn hàng
