@@ -2,9 +2,11 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
 app.use(cors());
+app.use(bodyParser.json());
 
 const server = http.createServer(app);
 
@@ -21,6 +23,24 @@ let customers = [];
 let kitchens = [];
 let admins = [];
 let managers = [];
+
+// Thông báo món đặt trước cho bếp
+
+app.post('/notify-kitchen-reservation', (req, res) => {
+  const data = req.body;
+
+  const targetKitchens = kitchens.filter(k => k.branchId == data.branchId);
+
+  targetKitchens.forEach((kitchen) => {
+    io.to(kitchen.socketId).emit('reservation-upcoming', {
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  console.log(`Sent to ${targetKitchens.length} kitchen(s) at branch ${data.branchId}`);
+  res.json({ success: true, sent: targetKitchens.length });
+});
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -50,7 +70,7 @@ io.on('connection', (socket) => {
       const role = data;
       if (role === 'employee') employees.push(socket.id);
       if (role === 'customer') customers.push(socket.id);
-      if (role === 'kitchen') kitchens.push(socket.id);
+      if (role === 'kitchen') kitchens.push({ socketId: socket.id, branchId: null });
       console.log(`📋 ${role} connected: ${socket.id}`);
       return;
     }
@@ -69,8 +89,8 @@ io.on('connection', (socket) => {
     }
 
     if (role === 'kitchen') {
-      kitchens.push(socket.id);
-      console.log(`👨‍🍳 Kitchen connected: ${socket.id}`);
+      kitchens.push({ socketId: socket.id, branchId: branchId });
+      console.log(`👨‍🍳 Kitchen connected: ${socket.id}, Branch: ${branchId}`);
     }
 
     if (role === 'admin') {
@@ -204,8 +224,8 @@ io.on('connection', (socket) => {
       io.to(empId).emit("order-for-staff", enrichedOrder);
     });
     // Gửi đơn hàng này cho tất cả bếp
-    kitchens.forEach((kitchenId) => {
-      io.to(kitchenId).emit("new-order", {
+    kitchens.forEach((kitchen) => {
+      io.to(kitchen.socketId).emit("new-order", {
         ...orderData,
         timestamp: new Date().toISOString()
       });
@@ -215,19 +235,32 @@ io.on('connection', (socket) => {
     io.emit("update-tables");
   });
 
-  // Nhận update order từ backend
-  socket.on("order-updated", (orderData) => {
-    console.log("🔄 Order updated:", orderData);
+  // Khi nhân viên thêm món vào đơn cũ → gửi bếp như đơn mới
+  socket.on('items-added-to-order', (data) => {
+    console.log('➕ Món mới thêm vào đơn:', data);
 
-    // Broadcast cho tất cả nhân viên
+    kitchens.forEach((kitchen) => {
+      io.to(kitchen.socketId).emit('new-order', {
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    });
+
     employees.forEach((empId) => {
-      io.to(empId).emit("update-order-status", orderData);
+      io.to(empId).emit('order-updated', data);
     });
-    // Broadcast cho tất cả bếp
+
+    io.emit('update-tables');
+    console.log(`📤 Sent to ${kitchens.length} kitchen(s)`);
+  });
+
+  // Nhận update order từ backend
+  socket.on("new-order", (orderData) => {
+    console.log("🆕 New order received:", orderData);
+
     kitchens.forEach((kitchenId) => {
-      io.to(kitchenId).emit("update-order-status", orderData);
+      io.to(kitchenId).emit("new-order", orderData);
     });
-    io.emit("update-tables");
   });
 
   // Nhân viên cập nhật trạng thái đơn hàng
@@ -254,13 +287,14 @@ io.on('connection', (socket) => {
       console.log(`📤 Sent notification to customer ${customer.socketId}`);
     });
 
+
     // VẪN GỬI CHO NHÂN VIÊN & BẾP ĐỂ ĐỒNG BỘ
     employees.forEach((empId) => {
       io.to(empId).emit("update-order-status", data);
     });
 
-    kitchens.forEach((kitchenId) => {
-      io.to(kitchenId).emit("update-order-status", data);
+    kitchens.forEach((kitchen) => {
+      io.to(kitchen.socketId).emit("update-order-status", data);
     });
 
     io.emit("update-tables");
@@ -274,11 +308,10 @@ io.on('connection', (socket) => {
       io.to(empId).emit("update-order-status", orderData);
     });
 
-    kitchens.forEach((kitchenId) => {
-      io.to(kitchenId).emit("update-order-status", orderData);
+    kitchens.forEach((kitchen) => {
+      io.to(kitchen.socketId).emit("update-order-status", orderData);
     });
 
-    io.emit("update-tables");
   });
 
   // Khi bếp cập nhật trạng thái món
@@ -291,9 +324,9 @@ io.on('connection', (socket) => {
     });
 
     // Gửi cho các bếp khác để đồng bộ
-    kitchens.forEach((kitchenId) => {
-      if (kitchenId !== socket.id) { // Không gửi lại cho chính nó
-        io.to(kitchenId).emit("order-item-updated", itemData);
+    kitchens.forEach((kitchen) => {
+      if (kitchen.socketId !== socket.id) { // Không gửi lại cho chính nó
+        io.to(kitchen.socketId).emit("order-item-updated", itemData);
       }
     });
   });
@@ -308,13 +341,13 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const wasEmployee = employees.includes(socket.id);
     const wasCustomer = customers.some(c => c.socketId === socket.id);
-    const wasKitchen = kitchens.includes(socket.id);
+    const wasKitchen = kitchens.some(k => k.socketId === socket.id);
     const wasAdmin = admins.some(a => a.socketId === socket.id);
     const wasManager = managers.some(m => m.socketId === socket.id);
 
     employees = employees.filter((id) => id !== socket.id);
     customers = customers.filter((c) => c.socketId !== socket.id);
-    kitchens = kitchens.filter((id) => id !== socket.id);
+    kitchens = kitchens.filter((k) => k.socketId !== socket.id);
     admins = admins.filter((a) => a.socketId !== socket.id);
     managers = managers.filter((m) => m.socketId !== socket.id);
 
