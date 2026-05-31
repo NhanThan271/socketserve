@@ -294,35 +294,103 @@ io.on('connection', (socket) => {
 
   // ===== KHI BẾP CẬP NHẬT TRẠNG THÁI MÓN (BẮT ĐẦU NẤU / HOÀN THÀNH) =====
   socket.on("update-order-item-status", (itemData) => {
-    console.log("👨‍🍳 Bếp cập nhật trạng thái món:", itemData);
+    console.log("=========================================");
+    console.log("👨‍🍳 [SERVER] Bếp cập nhật trạng thái món:");
+    console.log("📦 Full data:", JSON.stringify(itemData, null, 2));
     console.log(`📌 Branch ID: ${itemData.branchId}`);
     console.log(`📋 Status: ${itemData.status} - ${itemData.itemName}`);
     console.log(`🆔 Items: ${itemData.items?.join(', ')}`);
     console.log(`🪑 Tables: ${itemData.tables?.join(', ')}`);
 
+    // Log danh sách waiters hiện tại
+    console.log("👥 Current waiters in system:");
+    waiters.forEach(w => {
+      console.log(`   - Socket: ${w.socketId}, UserID: ${w.userId}, Branch: ${w.branchId}`);
+    });
+
     // ===== GỬI CHO WAITERS CÙNG CHI NHÁNH =====
     const targetWaiters = waiters.filter(w => w.branchId === itemData.branchId);
+    console.log(`🎯 Target waiters for branch ${itemData.branchId}: ${targetWaiters.length}`);
+
+    if (targetWaiters.length === 0) {
+      console.log("⚠️ [SERVER] No waiters found for branch", itemData.branchId);
+    }
 
     targetWaiters.forEach((waiter) => {
+      console.log(`📤 [SERVER] Sending to Waiter: ${waiter.socketId} (UserID: ${waiter.userId})`);
       io.to(waiter.socketId).emit("update-order-item-status", itemData);
-      console.log(`📤 Sent to Waiter: ${waiter.socketId} (UserID: ${waiter.userId})`);
     });
 
     // ===== GỬI CHO EMPLOYEES =====
+    console.log(`👥 Employees count: ${employees.length}`);
     employees.forEach((empId) => {
+      console.log(`📤 [SERVER] Sending to Employee: ${empId}`);
       io.to(empId).emit("update-order-item-status", itemData);
-      console.log(`📤 Sent to Employee: ${empId}`);
     });
 
     // ===== GỬI CHO CÁC BẾP KHÁC TRONG CÙNG CHI NHÁNH ĐỂ ĐỒNG BỘ =====
     const targetKitchens = kitchens.filter(k => k.branchId === itemData.branchId && k.socketId !== socket.id);
+    console.log(`👨‍🍳 Other kitchens in branch: ${targetKitchens.length}`);
 
     targetKitchens.forEach((kitchen) => {
+      console.log(`📤 [SERVER] Sending to Kitchen: ${kitchen.socketId}`);
       io.to(kitchen.socketId).emit("update-order-item-status", itemData);
-      console.log(`📤 Sent to Kitchen: ${kitchen.socketId}`);
     });
 
-    console.log(`📤 Tổng cộng đã gửi: ${targetWaiters.length} waiter(s), ${employees.length} employee(s), ${targetKitchens.length} kitchen(s)`);
+    console.log(`📤 [SERVER] TOTAL sent: ${targetWaiters.length} waiter(s), ${employees.length} employee(s), ${targetKitchens.length} kitchen(s)`);
+    console.log("=========================================");
+  });
+
+  // ===== KHI BẾP CẬP NHẬT TRẠNG THÁI MÓN (CHO WAITER - THÊM MỚI) =====
+  socket.on("kitchen-item-status-changed", (itemData) => {
+    console.log("=========================================");
+    console.log("👨‍🍳 [SERVER] Kitchen item status changed (for waiter):");
+    console.log("📦 Full data:", JSON.stringify(itemData, null, 2));
+    console.log(`📌 Branch ID: ${itemData.branchId}`);
+    console.log(`📋 Status: ${itemData.status} - ${itemData.itemName}`);
+    console.log(`📝 Message: ${itemData.message}`);
+    console.log(`🆔 Items: ${itemData.items?.join(', ')}`);
+    console.log(`🪑 Tables: ${itemData.tables?.join(', ')}`);
+
+    // Log danh sách waiters hiện tại
+    console.log("👥 Current waiters in system:");
+    waiters.forEach(w => {
+      console.log(`   - Socket: ${w.socketId}, UserID: ${w.userId}, Branch: ${w.branchId}`);
+    });
+
+    // ===== GỬI CHO WAITERS CÙNG CHI NHÁNH =====
+    const targetWaiters = waiters.filter(w => w.branchId === itemData.branchId);
+    console.log(`🎯 Target waiters for branch ${itemData.branchId}: ${targetWaiters.length}`);
+
+    if (targetWaiters.length === 0) {
+      console.log("⚠️ [SERVER] No waiters found for branch", itemData.branchId);
+      // Log tất cả waiters để debug
+      console.log("👥 All registered waiters:", JSON.stringify(waiters, null, 2));
+    }
+
+    targetWaiters.forEach((waiter) => {
+      console.log(`📤 [SERVER] Sending kitchen-item-status-changed to Waiter: ${waiter.socketId} (UserID: ${waiter.userId})`);
+      io.to(waiter.socketId).emit("kitchen-item-status-changed", itemData);
+    });
+
+    // ===== GỬI CHO EMPLOYEES =====
+    console.log(`👥 Employees count: ${employees.length}`);
+    employees.forEach((empId) => {
+      console.log(`📤 [SERVER] Sending kitchen-item-status-changed to Employee: ${empId}`);
+      io.to(empId).emit("kitchen-item-status-changed", itemData);
+    });
+
+    // ===== GỬI CHO CÁC BẾP KHÁC TRONG CÙNG CHI NHÁNH ĐỂ ĐỒNG BỘ =====
+    const targetKitchens = kitchens.filter(k => k.branchId === itemData.branchId && k.socketId !== socket.id);
+    console.log(`👨‍🍳 Other kitchens in branch: ${targetKitchens.length}`);
+
+    targetKitchens.forEach((kitchen) => {
+      console.log(`📤 [SERVER] Sending kitchen-item-status-changed to Kitchen: ${kitchen.socketId}`);
+      io.to(kitchen.socketId).emit("kitchen-item-status-changed", itemData);
+    });
+
+    console.log(`📤 [SERVER] TOTAL sent kitchen-item-status-changed: ${targetWaiters.length} waiter(s), ${employees.length} employee(s), ${targetKitchens.length} kitchen(s)`);
+    console.log("=========================================");
   });
 
   // ==================== TABLE EVENTS ====================
