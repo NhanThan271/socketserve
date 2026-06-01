@@ -264,6 +264,11 @@ io.on('connection', (socket) => {
     console.log(`📤 TOTAL: ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${employees.length} employee(s)`);
   });
 
+  socket.on("payment-success", (data) => {
+    // Broadcast đến tất cả users trong cùng branch
+    io.emit("payment-success", data);
+  });
+
   // ===== CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG =====
   socket.on("order-status-changed", (data) => {
     console.log("=========================================");
