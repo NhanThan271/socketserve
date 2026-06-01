@@ -452,6 +452,66 @@ io.on('connection', (socket) => {
   });
 });
 
+app.post('/notify-staff-reservation', (req, res) => {
+
+  const data = req.body;
+
+  console.log('📅 Reservation Notification:', data);
+
+  const targetWaiters =
+    waiters.filter(w => w.branchId === data.branchId);
+
+  const targetCashiers =
+    cashiers.filter(c => c.branchId === data.branchId);
+
+  targetWaiters.forEach(waiter => {
+    io.to(waiter.socketId)
+      .emit('staff-reservation-notification', data);
+  });
+
+  targetCashiers.forEach(cashier => {
+    io.to(cashier.socketId)
+      .emit('staff-reservation-notification', data);
+  });
+
+  console.log(
+    `📤 Sent to ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s)`
+  );
+
+  res.json({
+    success: true
+  });
+});
+
+app.post('/notify-kitchen-reservation', (req, res) => {
+
+  const data = req.body;
+
+  console.log('👨‍🍳 Kitchen Reservation Notification');
+
+  const targetKitchens =
+    kitchens.filter(
+      k => k.branchId === data.branchId
+    );
+
+  targetKitchens.forEach(kitchen => {
+
+    io.to(kitchen.socketId)
+      .emit(
+        'kitchen-reservation-notification',
+        data
+      );
+  });
+
+  console.log(
+    `📤 Sent to ${targetKitchens.length} kitchen(s)`
+  );
+
+  res.json({
+    success: true
+  });
+});
+
 // ==================== START SERVER ====================
 const PORT = process.env.SOCKET_PORT || 3001;
 server.listen(PORT, () => {
