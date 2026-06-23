@@ -12,7 +12,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*", 
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
@@ -510,6 +510,31 @@ app.post('/notify-kitchen-reservation', (req, res) => {
   res.json({
     success: true
   });
+});
+
+app.post('/notify-new-order', (req, res) => {
+  const data = req.body;
+  console.log('🍳 New order from reservation, emitting to kitchen:', data);
+
+  const targetKitchens = kitchens.filter(k => k.branchId === data.branchId);
+  targetKitchens.forEach(kitchen => {
+    io.to(kitchen.socketId).emit('new-order', data);
+  });
+
+  const targetWaiters = waiters.filter(w => w.branchId === data.branchId);
+  targetWaiters.forEach(waiter => {
+    io.to(waiter.socketId).emit('new-order', data);
+  });
+
+  const targetCashiers = cashiers.filter(c => c.branchId === data.branchId);
+  targetCashiers.forEach(cashier => {
+    io.to(cashier.socketId).emit('new-order', data);
+  });
+
+  io.emit('update-tables');
+
+  console.log(`📤 Sent to ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s)`);
+  res.json({ success: true });
 });
 
 // ==================== START SERVER ====================
