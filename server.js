@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
       if (role === 'kitchen') kitchens.push({ socketId: socket.id, branchId: null, userId: null });
       if (role === 'waiter') waiters.push({ socketId: socket.id, userId: null, branchId: null });
       if (role === 'cashier') cashiers.push({ socketId: socket.id, userId: null, branchId: null });
-      console.log(`📋 ${role} connected: ${socket.id}`);
+      console.log(`${role} connected: ${socket.id}`);
       return;
     }
 
@@ -122,7 +122,7 @@ io.on('connection', (socket) => {
       console.log(`Sent notification to Admin: ${admin.socketId}`);
     });
 
-    console.log(`📤 Sent to ${admins.length} admin(s)`);
+    console.log(`Sent to ${admins.length} admin(s)`);
   });
 
   socket.on('inventory-request-approved', (approvalData) => {
@@ -144,7 +144,7 @@ io.on('connection', (socket) => {
       timestamp: new Date().toISOString()
     });
 
-    console.log(`📤 Sent approval to ${affectedManagers.length} manager(s)`);
+    console.log(`Sent approval to ${affectedManagers.length} manager(s)`);
   });
 
   socket.on('inventory-request-rejected', (rejectionData) => {
@@ -161,7 +161,7 @@ io.on('connection', (socket) => {
       console.log(`Sent rejection to Manager: ${manager.socketId}`);
     });
 
-    console.log(`📤 Sent rejection to ${affectedManagers.length} manager(s)`);
+    console.log(`Sent rejection to ${affectedManagers.length} manager(s)`);
   });
 
   socket.on('branch-inventory-updated', (data) => {
@@ -186,7 +186,7 @@ io.on('connection', (socket) => {
     console.log(`📦 Order #${orderData.orderId}`);
     console.log(`📌 Branch ID: ${orderData.branchId}`);
     console.log(`📍 Location: ${orderData.locationName}`);
-    console.log(`📋 Items: ${orderData.items?.length || 0}`);
+    console.log(`Items: ${orderData.items?.length || 0}`);
     console.log("=========================================");
 
     // Gửi đến KITCHEN cùng branch
@@ -215,7 +215,7 @@ io.on('connection', (socket) => {
       io.to(empId).emit("new-order", orderData);
     });
 
-    console.log(`📤 TOTAL: ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${employees.length} employee(s)`);
+    console.log(`TOTAL: ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${employees.length} employee(s)`);
   });
 
   // ===== CẬP NHẬT ĐƠN HÀNG (THÊM MÓN) =====
@@ -225,7 +225,7 @@ io.on('connection', (socket) => {
     console.log(`📦 Order #${orderData.orderId}`);
     console.log(`📌 Branch ID: ${orderData.branchId}`);
     console.log(`📍 Location: ${orderData.locationName}`);
-    console.log(`📋 New items: ${orderData.items?.length || 0}`);
+    console.log(`New items: ${orderData.items?.length || 0}`);
     console.log("=========================================");
 
     // Debug kitchens
@@ -238,7 +238,7 @@ io.on('connection', (socket) => {
     const targetKitchens = kitchens.filter(k => k.branchId === orderData.branchId);
     console.log(`👨‍🍳 Kitchens matching branch ${orderData.branchId}: ${targetKitchens.length}`);
     targetKitchens.forEach((kitchen) => {
-      console.log(`📤 Sending order-updated to Kitchen: ${kitchen.socketId}`);
+      console.log(`Sending order-updated to Kitchen: ${kitchen.socketId}`);
       io.to(kitchen.socketId).emit("order-updated", orderData);
     });
 
@@ -261,7 +261,7 @@ io.on('connection', (socket) => {
       io.to(empId).emit("order-updated", orderData);
     });
 
-    console.log(`📤 TOTAL: ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${employees.length} employee(s)`);
+    console.log(`TOTAL: ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${employees.length} employee(s)`);
   });
 
   socket.on("payment-success", (data) => {
@@ -317,14 +317,14 @@ io.on('connection', (socket) => {
     // Cập nhật bàn
     io.emit("update-tables");
 
-    console.log(`📤 Sent to ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${targetKitchens.length} kitchen(s), ${employees.length} employee(s)`);
+    console.log(`Sent to ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${targetKitchens.length} kitchen(s), ${employees.length} employee(s)`);
   });
 
   // ===== BẾP CẬP NHẬT TRẠNG THÁI MÓN =====
   socket.on("update-order-item-status", (itemData) => {
     console.log("=========================================");
     console.log("👨‍🍳 [SERVER] Kitchen updated item status:");
-    console.log(`📋 ${itemData.itemName} → ${itemData.status}`);
+    console.log(`${itemData.itemName} → ${itemData.status}`);
     console.log(`📌 Branch: ${itemData.branchId}`);
     console.log(`🆔 Items: ${itemData.items?.join(', ')}`);
     console.log(`🪑 Tables: ${itemData.tables?.join(', ')}`);
@@ -355,7 +355,7 @@ io.on('connection', (socket) => {
       io.to(kitchen.socketId).emit("update-order-item-status", itemData);
     });
 
-    console.log(`📤 TOTAL: ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${otherKitchens.length} other kitchen(s), ${employees.length} employee(s)`);
+    console.log(`TOTAL: ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${otherKitchens.length} other kitchen(s), ${employees.length} employee(s)`);
   });
 
   // ===== BẾP CẬP NHẬT TRẠNG THÁI MÓN (CHO WAITER) =====
@@ -364,7 +364,7 @@ io.on('connection', (socket) => {
     console.log("👨‍🍳 [SERVER] Kitchen item status changed (waiter notification):");
     console.log(`📝 Message: ${itemData.message}`);
     console.log(`📌 Branch: ${itemData.branchId}`);
-    console.log(`📋 Status: ${itemData.status} - ${itemData.itemName}`);
+    console.log(`Status: ${itemData.status} - ${itemData.itemName}`);
     console.log("=========================================");
 
     // Gửi cho WAITER
@@ -392,7 +392,7 @@ io.on('connection', (socket) => {
       io.to(kitchen.socketId).emit("kitchen-item-status-changed", itemData);
     });
 
-    console.log(`📤 TOTAL: ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${otherKitchens.length} other kitchen(s), ${employees.length} employee(s)`);
+    console.log(`TOTAL: ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s), ${otherKitchens.length} other kitchen(s), ${employees.length} employee(s)`);
   });
 
   // ==================== TABLE EVENTS ====================
@@ -417,7 +417,7 @@ io.on('connection', (socket) => {
       io.to(waiter.socketId).emit("reservation-upcoming", data);
     });
 
-    console.log(`📤 Sent reservation to ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s)`);
+    console.log(`Sent reservation to ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s)`);
   });
 
   // ==================== DISCONNECT ====================
@@ -473,7 +473,7 @@ app.post('/notify-staff-reservation', (req, res) => {
   });
 
   console.log(
-    `📤 Sent to ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s)`
+    `Sent to ${targetWaiters.length} waiter(s), ${targetCashiers.length} cashier(s)`
   );
 
   res.json({
@@ -484,23 +484,25 @@ app.post('/notify-staff-reservation', (req, res) => {
 app.post('/notify-kitchen-reservation', (req, res) => {
 
   const data = req.body;
-
-  console.log('👨‍🍳 Kitchen Reservation Notification');
+  console.log('Kitchen Reservation Notification, branchId:', data.branchId);
 
   const branchIdNum = Number(data.branchId);
   const targetKitchens = kitchens.filter(k => Number(k.branchId) === branchIdNum);
+
+  console.log(`Found ${targetKitchens.length} kitchen(s) for branch ${branchIdNum}`);
+  console.log('All kitchens:', kitchens.map(k => ({ branchId: k.branchId, socketId: k.socketId })));
 
   targetKitchens.forEach(kitchen => {
 
     io.to(kitchen.socketId)
       .emit(
-        'kitchen-reservation-notification',
+        'reservation-upcoming',
         data
       );
   });
 
   console.log(
-    `📤 Sent to ${targetKitchens.length} kitchen(s)`
+    `Sent to ${targetKitchens.length} kitchen(s)`
   );
 
   res.json({
@@ -536,7 +538,7 @@ app.post('/notify-new-order', (req, res) => {
 const PORT = process.env.SOCKET_PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Socket.IO server đang chạy tại http://localhost:${PORT}`);
-  console.log(`📋 Waiting for connections...`);
+  console.log(`Waiting for connections...`);
   console.log(`👥 Roles supported: admin, manager, waiter, cashier, employee, kitchen, customer`);
   console.log(`📡 CORS enabled for: http://localhost:3000`);
 });
