@@ -458,11 +458,9 @@ app.post('/notify-staff-reservation', (req, res) => {
 
   console.log('📅 Reservation Notification:', data);
 
-  const targetWaiters =
-    waiters.filter(w => w.branchId === data.branchId);
-
-  const targetCashiers =
-    cashiers.filter(c => c.branchId === data.branchId);
+  const branchIdNum = Number(data.branchId);
+  const targetWaiters = waiters.filter(w => Number(w.branchId) === branchIdNum);
+  const targetCashiers = cashiers.filter(c => Number(c.branchId) === branchIdNum);
 
   targetWaiters.forEach(waiter => {
     io.to(waiter.socketId)
@@ -489,10 +487,8 @@ app.post('/notify-kitchen-reservation', (req, res) => {
 
   console.log('👨‍🍳 Kitchen Reservation Notification');
 
-  const targetKitchens =
-    kitchens.filter(
-      k => k.branchId === data.branchId
-    );
+  const branchIdNum = Number(data.branchId);
+  const targetKitchens = kitchens.filter(k => Number(k.branchId) === branchIdNum);
 
   targetKitchens.forEach(kitchen => {
 
@@ -514,26 +510,25 @@ app.post('/notify-kitchen-reservation', (req, res) => {
 
 app.post('/notify-new-order', (req, res) => {
   const data = req.body;
-  console.log('🍳 New order from reservation, emitting to kitchen:', data);
 
-  const targetKitchens = kitchens.filter(k => k.branchId === data.branchId);
+  const branchIdNum = Number(data.branchId);
+
+  const targetKitchens = kitchens.filter(k => Number(k.branchId) === branchIdNum);
   targetKitchens.forEach(kitchen => {
     io.to(kitchen.socketId).emit('new-order', data);
   });
 
-  const targetWaiters = waiters.filter(w => w.branchId === data.branchId);
+  const targetWaiters = waiters.filter(w => Number(w.branchId) === branchIdNum);
   targetWaiters.forEach(waiter => {
     io.to(waiter.socketId).emit('new-order', data);
   });
 
-  const targetCashiers = cashiers.filter(c => c.branchId === data.branchId);
+  const targetCashiers = cashiers.filter(c => Number(c.branchId) === branchIdNum);
   targetCashiers.forEach(cashier => {
     io.to(cashier.socketId).emit('new-order', data);
   });
 
   io.emit('update-tables');
-
-  console.log(`📤 Sent to ${targetKitchens.length} kitchen(s), ${targetWaiters.length} waiter(s)`);
   res.json({ success: true });
 });
 
