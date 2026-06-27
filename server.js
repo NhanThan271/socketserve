@@ -190,7 +190,7 @@ io.on('connection', (socket) => {
     console.log("=========================================");
 
     // Gửi đến KITCHEN cùng branch
-    const targetKitchens = kitchens.filter(k => k.branchId === orderData.branchId);
+    const targetKitchens = kitchens.filter(k => Number(k.branchId) === Number(orderData.branchId));
     console.log(`👨‍🍳 Sending to ${targetKitchens.length} kitchen(s)`);
     targetKitchens.forEach((kitchen) => {
       io.to(kitchen.socketId).emit("new-order", orderData);
@@ -514,8 +514,11 @@ app.post('/notify-new-order', (req, res) => {
   const data = req.body;
 
   const branchIdNum = Number(data.branchId);
+  console.log('🔔 notify-new-order received, branchId:', data.branchId, '→', branchIdNum);
+  console.log('👨‍🍳 All kitchens:', kitchens.map(k => ({ branchId: k.branchId, type: typeof k.branchId })));
 
   const targetKitchens = kitchens.filter(k => Number(k.branchId) === branchIdNum);
+  console.log('✅ Matched kitchens:', targetKitchens.length);
   targetKitchens.forEach(kitchen => {
     io.to(kitchen.socketId).emit('new-order', data);
   });
