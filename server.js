@@ -405,14 +405,14 @@ io.on('connection', (socket) => {
   // ==================== RESERVATION EVENTS ====================
 
   socket.on("reservation-upcoming", (data) => {
-    console.log("📅 Reservation upcoming:", data);
+    const branchIdNum = Number(data.branchId);
 
-    const targetKitchens = kitchens.filter(k => k.branchId === data.branchId);
+    const targetKitchens = kitchens.filter(k => Number(k.branchId) === branchIdNum);
     targetKitchens.forEach((kitchen) => {
       io.to(kitchen.socketId).emit("reservation-upcoming", data);
     });
 
-    const targetWaiters = waiters.filter(w => w.branchId === data.branchId);
+    const targetWaiters = waiters.filter(w => Number(w.branchId) === branchIdNum);
     targetWaiters.forEach((waiter) => {
       io.to(waiter.socketId).emit("reservation-upcoming", data);
     });
